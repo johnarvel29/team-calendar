@@ -1,0 +1,864 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Team Calendar</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg-page:#FAF8F5;
+  --bg-card:#ffffff;
+  --bg-soft:#F2EFEA;
+  --bg-soft-2:#ECE8E1;
+  --ink:#201E2B;
+  --ink-soft:#6F6C7A;
+  --ink-faint:#A6A3AE;
+  --line:rgba(32,30,43,0.09);
+  --line-strong:rgba(32,30,43,0.16);
+  --accent:#5C4FE5;
+  --accent-deep:#4138AD;
+  --accent-soft:#EEECFC;
+  --good:#2F7D4F;
+  --bad:#C13D3D;
+  --warn:#B4791A;
+  --radius-sm:8px;
+  --radius-md:12px;
+  --radius-lg:18px;
+  --shadow-sm:0 1px 2px rgba(32,30,43,0.05), 0 1px 1px rgba(32,30,43,0.04);
+  --shadow-md:0 8px 24px -8px rgba(32,30,43,0.16), 0 2px 6px -2px rgba(32,30,43,0.08);
+  --font-display:'Outfit',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  --font-body:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+}
+@media(prefers-color-scheme:dark){
+  :root{
+    --bg-page:#16151B;
+    --bg-card:#1F1E26;
+    --bg-soft:#262530;
+    --bg-soft-2:#2C2B37;
+    --ink:#F1EFF6;
+    --ink-soft:#A8A5B4;
+    --ink-faint:#716E7E;
+    --line:rgba(255,255,255,0.08);
+    --line-strong:rgba(255,255,255,0.15);
+    --accent:#8B7FFF;
+    --accent-deep:#6E62E8;
+    --accent-soft:#2A2750;
+    --shadow-sm:0 1px 2px rgba(0,0,0,0.3);
+    --shadow-md:0 12px 28px -10px rgba(0,0,0,0.55), 0 2px 8px -2px rgba(0,0,0,0.4);
+  }
+}
+@media(prefers-reduced-motion:reduce){
+  *{animation-duration:.001ms!important;transition-duration:.001ms!important}
+}
+body{
+  font-family:var(--font-body);
+  background:var(--bg-page);
+  color:var(--ink);
+  min-height:100vh;
+  padding:2.25rem 1rem 4rem;
+  -webkit-font-smoothing:antialiased;
+}
+.app{max-width:720px;margin:0 auto;animation:rise .35s ease both}
+@keyframes rise{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+
+button{font-family:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:6px}
+
+.toast{
+  position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%) translateY(8px);
+  background:var(--ink);color:var(--bg-card);
+  padding:11px 20px;border-radius:999px;
+  font-size:13px;font-weight:500;opacity:0;
+  transition:opacity .25s,transform .25s;pointer-events:none;z-index:999;
+  white-space:nowrap;box-shadow:var(--shadow-md);
+  display:flex;align-items:center;gap:8px;
+}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* ---- top bar: brand + sync ---- */
+.topbar{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:1.5rem;
+}
+.brand{display:flex;align-items:center;gap:9px}
+.brand-mark{
+  width:30px;height:30px;border-radius:9px;
+  background:linear-gradient(135deg,var(--accent),var(--accent-deep));
+  display:flex;align-items:center;justify-content:center;color:#fff;font-size:15px;
+  box-shadow:var(--shadow-sm);
+}
+.brand-name{font-family:var(--font-display);font-weight:600;font-size:15px;letter-spacing:-.01em}
+.sync-chip{
+  display:flex;align-items:center;gap:7px;
+  font-size:12px;color:var(--ink-soft);
+  background:var(--bg-soft);border-radius:999px;
+  padding:6px 11px 6px 9px;
+}
+.sync-dot{width:6px;height:6px;border-radius:50%;background:var(--good);flex-shrink:0}
+.sync-dot.err{background:var(--bad)}
+.sync-dot.loading{background:var(--warn);animation:pulse 1s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+.sync-refresh{
+  background:transparent;border:none;cursor:pointer;color:var(--ink-faint);
+  display:flex;align-items:center;padding:0;margin-left:2px;transition:color .15s,transform .3s;
+}
+.sync-refresh:hover{color:var(--ink)}
+.sync-refresh:active{transform:rotate(180deg)}
+
+.month-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.1rem;gap:1rem}
+.month-title{font-family:var(--font-display);font-size:25px;font-weight:600;letter-spacing:-.01em;color:var(--ink)}
+.month-sub{font-size:12.5px;color:var(--ink-faint);margin-top:2px}
+.hdr-right{display:flex;gap:6px;flex-shrink:0}
+.icon-btn{
+  background:var(--bg-card);border:1px solid var(--line);
+  border-radius:var(--radius-sm);width:32px;height:32px;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;
+  color:var(--ink);font-size:15px;transition:background .15s,border-color .15s,transform .1s;
+}
+.icon-btn:hover{background:var(--bg-soft);border-color:var(--line-strong)}
+.icon-btn:active{transform:scale(.92)}
+.pill-btn{
+  background:var(--bg-card);border:1px solid var(--line);
+  border-radius:var(--radius-sm);padding:0 13px;height:32px;
+  font-size:12.5px;font-weight:600;cursor:pointer;color:var(--ink);
+  transition:background .15s,border-color .15s;
+}
+.pill-btn:hover{background:var(--bg-soft);border-color:var(--line-strong)}
+
+.grid-wrap{
+  background:var(--bg-card);border:1px solid var(--line);
+  border-radius:var(--radius-lg);overflow:hidden;box-shadow:var(--shadow-sm);
+}
+
+.agenda-card{
+  background:var(--bg-card);border:1px solid var(--line);
+  border-radius:var(--radius-lg);padding:1.1rem 1.2rem 1.2rem 1.35rem;
+  margin-bottom:1.5rem;box-shadow:var(--shadow-md);
+  position:relative;overflow:hidden;
+}
+.agenda-card::before{
+  content:'';position:absolute;left:0;top:0;bottom:0;width:4px;
+  background:linear-gradient(180deg,var(--accent),var(--accent-deep));
+}
+.agenda-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:.5rem}
+.agenda-head-title{display:flex;align-items:center;gap:7px;font-family:var(--font-display);font-weight:600;font-size:15px;color:var(--ink)}
+.agenda-head-title i{color:var(--accent)}
+.agenda-head-title-sub{font-size:12.5px;color:var(--ink-soft);font-family:var(--font-body);font-weight:600}
+.agenda-head-title-sub i{color:var(--ink-faint)}
+.agenda-count{
+  font-size:11px;font-weight:700;color:var(--accent);background:var(--accent-soft);
+  padding:2px 8px;border-radius:999px;
+}
+.agenda-link{
+  background:transparent;border:none;cursor:pointer;font-size:12px;font-weight:600;
+  color:var(--accent);display:flex;align-items:center;gap:4px;padding:4px 7px;
+  border-radius:6px;transition:background .15s;
+}
+.agenda-link:hover{background:var(--accent-soft)}
+.agenda-divider{height:1px;background:var(--line);margin:.8rem 0 .65rem}
+.agenda-list{display:flex;flex-direction:column;gap:1px}
+.agenda-row{
+  display:flex;align-items:center;gap:10px;padding:7px 8px;border-radius:8px;
+  cursor:pointer;transition:background .12s;
+}
+.agenda-row:hover{background:var(--bg-soft)}
+.agenda-row.done{opacity:.5}
+.agenda-row.done .agenda-title{text-decoration:line-through}
+.agenda-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.agenda-dot.purple{background:#534AB7}
+.agenda-dot.teal{background:#0F6E56}
+.agenda-dot.coral{background:#993C1D}
+.agenda-dot.blue{background:#185FA5}
+.agenda-dot.amber{background:#854F0B}
+.agenda-time{font-size:12px;font-weight:600;color:var(--ink-soft);width:48px;flex-shrink:0;font-variant-numeric:tabular-nums}
+.agenda-title{flex:1;min-width:0;font-size:13.5px;font-weight:500;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.agenda-date{
+  font-size:10.5px;font-weight:700;color:var(--ink-soft);background:var(--bg-soft);
+  padding:2.5px 8px;border-radius:999px;flex-shrink:0;text-transform:uppercase;letter-spacing:.03em;
+}
+.agenda-empty{font-size:13px;color:var(--ink-faint);padding:8px;display:flex;align-items:center;gap:7px}
+.wdays{display:grid;grid-template-columns:repeat(7,1fr);border-bottom:1px solid var(--line)}
+.wd{
+  padding:9px 0;text-align:center;
+  font-size:10.5px;font-weight:600;color:var(--ink-faint);
+  text-transform:uppercase;letter-spacing:.06em;
+}
+.days{display:grid;grid-template-columns:repeat(7,1fr)}
+.day{
+  min-height:88px;min-width:0;padding:7px 6px;
+  border-right:1px solid var(--line);
+  border-bottom:1px solid var(--line);
+  cursor:pointer;transition:background .12s;
+  position:relative;overflow:hidden;
+}
+.day:nth-child(7n){border-right:none}
+.day:hover{background:var(--bg-soft)}
+.day.other{background:var(--bg-page)}
+.day.other .dn{color:var(--ink-faint)}
+.day.today .dn{
+  background:linear-gradient(135deg,var(--accent),var(--accent-deep));color:#fff;
+  border-radius:50%;width:23px;height:23px;
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 2px 6px -1px rgba(92,79,229,.5);
+}
+.dn{
+  font-size:12.5px;font-weight:600;color:var(--ink);
+  width:23px;height:23px;
+  display:flex;align-items:center;justify-content:center;
+  margin-bottom:4px;
+}
+.ep{
+  font-size:10px;padding:2.5px 6px;border-radius:5px;
+  margin-bottom:2.5px;font-weight:600;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  border-left:2.5px solid transparent;
+  max-width:100%;
+}
+.ep.purple{background:var(--c-purple-soft,#EFEDFE);color:var(--c-purple-ink,#473EAE);border-left-color:#534AB7}
+.ep.teal{background:#E1F5EE;color:#0B5C47;border-left-color:#0F6E56}
+.ep.coral{background:#FBEDE7;color:#8A3618;border-left-color:#993C1D}
+.ep.blue{background:#E6F1FB;color:#15568F;border-left-color:#185FA5}
+.ep.amber{background:#FBF0DB;color:#7A4A0A;border-left-color:#854F0B}
+@media(prefers-color-scheme:dark){
+  .ep.purple{background:#2B2A50;color:#C9C3FF}
+  .ep.teal{background:#173630;color:#7CDDBC}
+  .ep.coral{background:#3A2419;color:#F2B89B}
+  .ep.blue{background:#1A2E45;color:#9CC8F2}
+  .ep.amber{background:#3A2C10;color:#F0C679}
+}
+.more{
+  font-size:9.5px;color:var(--ink-faint);font-weight:700;
+  padding:1px 5px;display:inline-block;
+}
+.ep.done{opacity:.55;text-decoration:line-through}
+
+/* ---- multi-day (consecutive-date, same-topic) merged pills ---- */
+.ep-start{margin-right:-6px;border-top-right-radius:0;border-bottom-right-radius:0;position:relative;z-index:1}
+.ep-end{margin-left:-6px;border-top-left-radius:0;border-bottom-left-radius:0;border-left-style:dashed}
+.ep-mid{margin-left:-6px;margin-right:-6px;border-radius:0;border-left-style:dashed}
+.ep-badge{
+  font-size:8px;font-weight:800;letter-spacing:.02em;
+  background:rgba(0,0,0,.13);padding:1px 4px;border-radius:3px;margin-right:3px;
+  vertical-align:1px;
+}
+.ep-arrow{opacity:.65;margin-right:2px;font-weight:700}
+.multiday-badge{
+  font-size:10px;font-weight:700;color:var(--accent);background:var(--accent-soft);
+  padding:1.5px 7px;border-radius:999px;flex-shrink:0;white-space:nowrap;
+}
+
+.back-btn{
+  display:flex;align-items:center;gap:6px;
+  font-size:13px;font-weight:500;color:var(--ink-soft);
+  cursor:pointer;border:none;background:transparent;
+  padding:4px 0;transition:color .15s,gap .15s;margin-bottom:1.4rem;
+}
+.back-btn:hover{color:var(--ink);gap:9px}
+.nav-strip{display:flex;justify-content:space-between;align-items:center;margin-bottom:1.6rem}
+.nav-strip-btn{
+  display:flex;align-items:center;gap:6px;
+  font-size:12.5px;font-weight:500;color:var(--ink-soft);
+  cursor:pointer;border:1px solid var(--line);
+  border-radius:var(--radius-sm);background:var(--bg-card);
+  padding:7px 13px;transition:background .15s,color .15s;
+}
+.nav-strip-btn:hover{background:var(--bg-soft);color:var(--ink)}
+.nav-day-label{
+  font-size:11.5px;font-weight:700;color:var(--accent);
+  text-transform:uppercase;letter-spacing:.06em;
+  background:var(--accent-soft);padding:4px 10px;border-radius:999px;
+}
+
+.focus-header{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:2rem;gap:1rem;flex-wrap:wrap}
+.focus-date{flex:1}
+.focus-weekday{
+  font-size:12.5px;font-weight:700;color:var(--accent);
+  text-transform:uppercase;letter-spacing:.09em;margin-bottom:6px;
+}
+.focus-day-num{font-family:var(--font-display);font-size:52px;font-weight:600;color:var(--ink);line-height:1;letter-spacing:-.02em}
+.focus-month{font-size:15px;color:var(--ink-soft);margin-top:5px}
+.focus-stats{display:flex;gap:10px;align-items:flex-end}
+.stat{background:var(--bg-card);border:1px solid var(--line);border-radius:var(--radius-md);padding:10px 16px;text-align:center;box-shadow:var(--shadow-sm)}
+.stat-n{font-family:var(--font-display);font-size:21px;font-weight:600;color:var(--ink)}
+.stat-l{font-size:10.5px;color:var(--ink-faint);margin-top:1px;text-transform:uppercase;letter-spacing:.04em;font-weight:600}
+
+.empty-day{
+  display:flex;align-items:center;gap:8px;
+  font-size:13px;color:var(--ink-faint);
+  background:var(--bg-soft);border-radius:var(--radius-md);
+  padding:11px 14px;margin-bottom:1.4rem;
+}
+
+.timeline{position:relative;padding-left:54px}
+.hour-row{display:flex;align-items:flex-start;min-height:54px;position:relative}
+.hr-label{
+  position:absolute;left:-54px;width:46px;text-align:right;
+  font-size:10.5px;color:var(--ink-faint);padding-top:1px;font-weight:600;
+}
+.hr-line{position:absolute;left:0;right:0;top:0;border-top:1px solid var(--line)}
+.hr-now{position:absolute;left:0;right:0;top:0;border-top:1.5px solid var(--accent);z-index:2}
+.hr-now::before{
+  content:'';position:absolute;left:-5px;top:-4px;
+  width:8px;height:8px;border-radius:50%;background:var(--accent);
+  box-shadow:0 0 0 3px var(--accent-soft);
+}
+.hr-now::after{
+  content:'now';position:absolute;right:0;top:-8px;
+  font-size:9px;font-weight:700;color:#fff;background:var(--accent);
+  padding:1px 6px;border-radius:999px;letter-spacing:.04em;text-transform:uppercase;
+}
+.ev-block{
+  border-radius:8px;
+  padding:7px 32px 7px 11px;margin-bottom:5px;cursor:pointer;
+  transition:transform .12s,box-shadow .12s,opacity .15s;position:relative;
+  border-left:3px solid transparent;min-width:0;
+}
+.ev-block.done{opacity:.5}
+.ev-block.done .ev-title,.ev-block.done .ev-time-label{text-decoration:line-through}
+.ev-block:hover{transform:translateX(2px);box-shadow:var(--shadow-sm)}
+.ev-block.purple{background:var(--ep-bg,#EFEDFE);border-left-color:#534AB7}
+.ev-block.teal{background:#E1F5EE;border-left-color:#0F6E56}
+.ev-block.coral{background:#FBEDE7;border-left-color:#993C1D}
+.ev-block.blue{background:#E6F1FB;border-left-color:#185FA5}
+.ev-block.amber{background:#FBF0DB;border-left-color:#854F0B}
+@media(prefers-color-scheme:dark){
+  .ev-block.purple{background:#2B2A50}
+  .ev-block.teal{background:#173630}
+  .ev-block.coral{background:#3A2419}
+  .ev-block.blue{background:#1A2E45}
+  .ev-block.amber{background:#3A2C10}
+}
+.ev-title{font-size:13.5px;font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ev-time-label{font-size:11px;color:var(--ink-soft);margin-top:1px;font-weight:500}
+.ev-del-inline{
+  position:absolute;right:8px;top:50%;transform:translateY(-50%);
+  background:transparent;border:none;cursor:pointer;
+  color:var(--ink-faint);font-size:14px;padding:4px;border-radius:6px;
+  opacity:0;transition:opacity .15s,background .15s,color .15s;
+}
+.ev-block:hover .ev-del-inline{opacity:1}
+.ev-del-inline:hover{color:var(--bad);background:rgba(193,61,61,.12)}
+.empty-hour{flex:1}
+.ev-block:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+/* ---- merge duplicates ---- */
+.merge-trigger{
+  background:transparent;border:none;cursor:pointer;color:var(--ink-faint);
+  display:flex;align-items:center;padding:3px;border-radius:6px;flex-shrink:0;
+  transition:color .15s,background .15s;font-size:13px;
+}
+.merge-trigger:hover{color:var(--accent);background:var(--accent-soft)}
+.ev-merge-inline{
+  background:transparent;border:none;cursor:pointer;color:rgba(255,255,255,.75);
+  display:flex;align-items:center;padding:2px;border-radius:6px;font-size:12px;
+  transition:color .15s,background .15s;
+}
+.ev-merge-inline:hover{color:#fff;background:rgba(255,255,255,.18)}
+.merge-overlay{
+  position:fixed;inset:0;background:rgba(20,18,28,.45);
+  display:flex;align-items:center;justify-content:center;padding:1.25rem;
+  z-index:1000;animation:fadeIn .15s ease both;
+}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.merge-modal{
+  background:var(--bg-card);border-radius:var(--radius-lg);box-shadow:var(--shadow-md);
+  width:100%;max-width:380px;padding:1.25rem 1.3rem 1.4rem;
+}
+.merge-modal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:.3rem}
+.merge-modal-title{display:flex;align-items:center;gap:7px;font-family:var(--font-display);font-weight:600;font-size:15.5px;color:var(--ink)}
+.merge-modal-title i{color:var(--accent)}
+.merge-modal-sub{font-size:12.5px;color:var(--ink-soft);line-height:1.45;margin-bottom:1rem}
+.merge-rows{display:flex;flex-direction:column;gap:8px}
+.merge-row{
+  display:flex;align-items:center;gap:10px;padding:9px 10px;
+  border:1px solid var(--line);border-radius:var(--radius-sm);background:var(--bg-soft);
+}
+.merge-row-info{flex:1;min-width:0}
+.merge-row-date{font-size:13px;font-weight:600;color:var(--ink)}
+.merge-row-time{font-size:11.5px;color:var(--ink-faint);margin-top:1px}
+.merge-row button{
+  background:var(--accent-soft);color:var(--accent-deep);border:none;
+  border-radius:7px;padding:6px 11px;font-size:12px;font-weight:700;cursor:pointer;
+  white-space:nowrap;transition:filter .15s;
+}
+.merge-row button:hover{filter:brightness(.97)}
+.merge-cancel{
+  margin-top:1rem;width:100%;background:transparent;border:1px solid var(--line-strong);
+  border-radius:var(--radius-sm);padding:8px;font-size:12.5px;font-weight:600;
+  color:var(--ink-soft);cursor:pointer;transition:background .15s;
+}
+.merge-cancel:hover{background:var(--bg-soft)}
+
+/* ---- add event card ---- */
+.add-card{
+  background:var(--bg-card);border:1px solid var(--line);
+  border-radius:var(--radius-lg);padding:1.15rem 1.25rem;
+  margin-top:1.75rem;box-shadow:var(--shadow-sm);
+}
+.add-card-label{
+  font-size:11.5px;font-weight:700;color:var(--ink-faint);
+  text-transform:uppercase;letter-spacing:.05em;margin-bottom:.7rem;
+  display:flex;align-items:center;gap:6px;
+}
+.add-row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.add-row input[type=text],.add-row input[type=time]{
+  font-size:13.5px;padding:0 12px;height:38px;
+  border-radius:var(--radius-sm);
+  border:1px solid var(--line-strong);
+  background:var(--bg-page);color:var(--ink);
+  transition:border-color .15s,box-shadow .15s;
+}
+.add-row input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft);outline:none}
+.add-row input[type=text]{flex:1;min-width:140px}
+.add-row input[type=time]{width:112px}
+.swatches{display:flex;gap:6px;align-items:center;padding:0 2px}
+.swatch{
+  width:24px;height:24px;border-radius:50%;border:none;cursor:pointer;
+  padding:0;position:relative;transition:transform .12s;flex-shrink:0;
+}
+.swatch:hover{transform:scale(1.12)}
+.swatch.purple{background:#534AB7}
+.swatch.teal{background:#0F6E56}
+.swatch.coral{background:#993C1D}
+.swatch.blue{background:#185FA5}
+.swatch.amber{background:#854F0B}
+.swatch.active{box-shadow:0 0 0 2px var(--bg-card),0 0 0 4px var(--ink-soft)}
+.add-row button.submit{
+  background:linear-gradient(135deg,var(--accent),var(--accent-deep));color:#fff;border:none;
+  border-radius:var(--radius-sm);padding:0 16px;height:38px;
+  font-size:13.5px;font-weight:600;cursor:pointer;
+  white-space:nowrap;display:flex;align-items:center;gap:6px;
+  transition:filter .15s,transform .1s;box-shadow:0 4px 10px -3px rgba(92,79,229,.5);
+  margin-left:auto;
+}
+.add-row button.submit:hover{filter:brightness(1.08)}
+.add-row button.submit:active{transform:scale(.97)}
+.add-row button.submit:disabled{opacity:.55;cursor:not-allowed;box-shadow:none}
+
+@media(max-width:480px){
+  body{padding:1.25rem .6rem 3rem}
+  .focus-day-num{font-size:38px}
+  .day{min-height:64px}
+  .month-title{font-size:19px}
+  .add-row{flex-direction:column;align-items:stretch}
+  .add-row input,.add-row button.submit{width:100%}
+  .swatches{justify-content:center;padding:4px 0}
+  .add-row button.submit{margin-left:0}
+  .agenda-card{padding:1rem .9rem 1.1rem 1.1rem}
+  .agenda-date{display:none}
+}
+</style>
+</head>
+<body>
+<div class="app" id="app"></div>
+<div class="toast" id="toast"></div>
+
+<script>
+const SUPABASE_URL='https://mwljmaswhgkumnfkbwmx.supabase.co';
+const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im13bGptYXN3aGdrdW1uZmtid214Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyNDgyMDcsImV4cCI6MjA5NzgyNDIwN30.zNHjOvTRyf6h3qKgjRtjLeyE3gjY2l9vbBAbgaRhY8s';
+const TABLE='events';
+const HEADERS={'Content-Type':'application/json','apikey':SUPABASE_KEY,'Authorization':'Bearer '+SUPABASE_KEY};
+
+const DAYS=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+const MONTHS=['January','February','March','April','May','June','July','August','September','October','November','December'];
+const COLORS=['purple','teal','coral','blue','amber'];
+
+const now=new Date();
+let curY=now.getFullYear(),curM=now.getMonth();
+let mode='cal';
+let focusY,focusM,focusD;
+let events=[];
+let syncStatus='loading';
+let newTitle='',newTime='09:00',newColor='purple';
+let saving=false;
+let pollTimer=null;
+let mergeId=null;
+let merging=false;
+
+function showToast(msg,dur=2500){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),dur);
+}
+
+async function fetchEvents(){
+  try{
+    const r=await fetch(`${SUPABASE_URL}/rest/v1/${TABLE}?select=*&order=date,time`,{headers:HEADERS});
+    if(!r.ok)throw new Error(r.status);
+    const data=await r.json();
+    const doneMap=new Map(events.map(e=>[e.id,e.done]));
+    events=data.map(e=>({
+      id:e.id,
+      title:e.title,
+      date:e.date,
+      time:e.time?e.time.slice(0,5):e.time,
+      color:e.color||'purple',
+      done:doneMap.get(e.id)||false
+    }));
+    syncStatus='ok';
+  }catch(e){
+    syncStatus='err';
+    console.error('Fetch error',e);
+  }
+  render();
+}
+
+async function addEv(date){
+  const el=document.getElementById('ftitle');
+  const t=el?el.value.trim():newTitle.trim();
+  if(!t||saving)return;
+  saving=true;render();
+  try{
+    const r=await fetch(`${SUPABASE_URL}/rest/v1/${TABLE}`,{
+      method:'POST',
+      headers:{...HEADERS,'Prefer':'return=representation'},
+      body:JSON.stringify({title:t,date,time:newTime,color:newColor})
+    });
+    if(!r.ok)throw new Error(r.status);
+    const [row]=await r.json();
+    events.push({id:row.id,title:row.title,date:row.date,time:row.time?row.time.slice(0,5):row.time,color:row.color||'purple',done:false});
+    newTitle='';
+    showToast('Event added');
+  }catch(e){
+    showToast('Could not save — check connection');
+    console.error(e);
+  }
+  saving=false;render();
+  const el2=document.getElementById('ftitle');
+  if(el2)el2.focus();
+}
+
+function toggleDone(id){
+  events=events.map(e=>e.id===id?{...e,done:!e.done}:e);
+  render();
+}
+
+async function delEv(id){
+  const prev=[...events];
+  events=events.filter(e=>e.id!==id);
+  render();
+  try{
+    const r=await fetch(`${SUPABASE_URL}/rest/v1/${TABLE}?id=eq.${id}`,{
+      method:'DELETE',headers:HEADERS
+    });
+    if(!r.ok)throw new Error(r.status);
+    showToast('Event removed');
+  }catch(e){
+    events=prev;
+    showToast('Could not delete — check connection');
+    render();
+  }
+}
+
+function normTitle(t){return(t||'').trim().toLowerCase()}
+function isNextDay(d1,d2){
+  return(new Date(d2+'T00:00:00')-new Date(d1+'T00:00:00'))===86400000;
+}
+function chainInfo(ev){
+  const dateSet=[...new Set(events.filter(e=>normTitle(e.title)===normTitle(ev.title)).map(e=>e.date))].sort();
+  const evIdx=dateSet.indexOf(ev.date);
+  let start=evIdx,end=evIdx;
+  while(start>0&&isNextDay(dateSet[start-1],dateSet[start]))start--;
+  while(end<dateSet.length-1&&isNextDay(dateSet[end],dateSet[end+1]))end++;
+  const dates=dateSet.slice(start,end+1);
+  return{dates,size:dates.length,index:dates.indexOf(ev.date),isFirst:dates[0]===ev.date,isLast:dates[dates.length-1]===ev.date};
+}
+function dupesOf(ev){
+  const chain=chainInfo(ev);
+  return events.filter(e=>e.id!==ev.id&&normTitle(e.title)===normTitle(ev.title)&&!chain.dates.includes(e.date));
+}
+function showMerge(id){mergeId=id;render()}
+function hideMerge(){if(merging)return;mergeId=null;render()}
+
+async function mergeEvents(keepId){
+  const keepEv=events.find(e=>e.id===keepId);
+  if(!keepEv)return;
+  const group=dupesOf(keepEv);
+  if(!group.length){mergeId=null;render();return}
+  merging=true;render();
+  const idsToDrop=group.map(e=>e.id);
+  const prev=[...events];
+  try{
+    await Promise.all(idsToDrop.map(id=>
+      fetch(`${SUPABASE_URL}/rest/v1/${TABLE}?id=eq.${id}`,{method:'DELETE',headers:HEADERS})
+        .then(r=>{if(!r.ok)throw new Error(r.status)})
+    ));
+    events=events.filter(e=>!idsToDrop.includes(e.id));
+    const d=new Date(keepEv.date+'T00:00:00');
+    showToast(`Merged into ${MONTHS[d.getMonth()].slice(0,3)} ${d.getDate()}`);
+  }catch(e){
+    events=prev;
+    showToast('Could not merge — check connection');
+    console.error(e);
+  }
+  merging=false;mergeId=null;render();
+}
+
+function mergeModalHTML(){
+  if(!mergeId)return'';
+  const ev=events.find(e=>e.id===mergeId);
+  if(!ev)return'';
+  const group=[ev,...dupesOf(ev)].sort((a,b)=>a.date===b.date?a.time.localeCompare(b.time):a.date.localeCompare(b.date));
+  if(group.length<2)return'';
+  const rows=group.map(e=>{
+    const d=new Date(e.date+'T00:00:00');
+    const dateLabel=`${DAYS[d.getDay()]}, ${MONTHS[d.getMonth()].slice(0,3)} ${d.getDate()}`;
+    return`<div class="merge-row">
+      <span class="agenda-dot ${e.color}"></span>
+      <div class="merge-row-info">
+        <div class="merge-row-date">${dateLabel}</div>
+        <div class="merge-row-time">${e.time}</div>
+      </div>
+      <button onclick="mergeEvents('${e.id}')" ${merging?'disabled':''}>Keep this date</button>
+    </div>`;
+  }).join('');
+  return`
+  <div class="merge-overlay" onclick="hideMerge()">
+    <div class="merge-modal" onclick="event.stopPropagation()">
+      <div class="merge-modal-head">
+        <div class="merge-modal-title"><i class="ti ti-git-merge"></i> Merge "${ev.title}"</div>
+        <button class="icon-btn" onclick="hideMerge()" aria-label="Close" ${merging?'disabled':''}><i class="ti ti-x"></i></button>
+      </div>
+      <div class="merge-modal-sub">${merging?'Merging…':`Found ${group.length} events with this title on different dates. Pick the date to keep — the others will be removed.`}</div>
+      <div class="merge-rows">${rows}</div>
+      <button class="merge-cancel" onclick="hideMerge()" ${merging?'disabled':''}>Cancel</button>
+    </div>
+  </div>`;
+}
+
+function startPolling(){
+  if(pollTimer)clearInterval(pollTimer);
+  pollTimer=setInterval(fetchEvents,15000);
+}
+
+function evOn(y,m,d){
+  const k=`${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+  return events.filter(e=>e.date===k).sort((a,b)=>a.time.localeCompare(b.time));
+}
+function nowHour(){return now.getHours()+now.getMinutes()/60}
+function dim(y,m){return new Date(y,m+1,0).getDate()}
+function fd(y,m){return new Date(y,m,1).getDay()}
+
+function topBarHTML(){
+  const dot=`<span class="sync-dot${syncStatus==='err'?' err':syncStatus==='loading'?' loading':''}"></span>`;
+  const label=syncStatus==='ok'?'Synced with team':syncStatus==='err'?'Connection error — retrying…':'Loading events…';
+  return`
+  <div class="topbar">
+    <div class="brand">
+      <div class="brand-mark"><i class="ti ti-calendar-event"></i></div>
+      <span class="brand-name">Team Calendar</span>
+    </div>
+    <div class="sync-chip">
+      ${dot}<span>${label}</span>
+      <button class="sync-refresh" onclick="fetchEvents()" title="Refresh now" aria-label="Refresh"><i class="ti ti-refresh" style="font-size:13px"></i></button>
+    </div>
+  </div>`;
+}
+
+function render(){
+  document.getElementById('app').innerHTML=topBarHTML()+(mode==='cal'?renderCal():renderFocus())+mergeModalHTML();
+}
+
+function agendaRow(e,dateLabel){
+  const hasDupes=dupesOf(e).length>0;
+  const chain=chainInfo(e);
+  const multiBadge=chain.size>1?`<span class="multiday-badge">Day ${chain.index+1}/${chain.size}</span>`:'';
+  return`<div class="agenda-row${e.done?' done':''}" role="button" tabindex="0" title="${e.done?'Mark as not done':'Mark as done'}" onclick="toggleDone('${e.id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleDone('${e.id}')}">
+    <span class="agenda-dot ${e.color}"></span>
+    <span class="agenda-time">${e.time}</span>
+    <span class="agenda-title">${e.title}</span>
+    ${multiBadge}
+    ${hasDupes?`<button class="merge-trigger" onclick="event.stopPropagation();showMerge('${e.id}')" title="Merge with same-topic event on another date" aria-label="Merge with same-topic event"><i class="ti ti-git-merge"></i></button>`:''}
+    ${dateLabel?`<span class="agenda-date">${dateLabel}</span>`:''}
+  </div>`;
+}
+
+function agendaHTML(){
+  const ty=now.getFullYear(),tm=now.getMonth(),td=now.getDate();
+  const todayStr=`${ty}-${String(tm+1).padStart(2,'0')}-${String(td).padStart(2,'0')}`;
+  const todays=evOn(ty,tm,td);
+  const upcoming=events
+    .filter(e=>e.date>todayStr)
+    .sort((a,b)=>a.date===b.date?a.time.localeCompare(b.time):a.date.localeCompare(b.date))
+    .slice(0,4);
+
+  const todayList=todays.length
+    ?todays.map(e=>agendaRow(e)).join('')
+    :`<div class="agenda-empty"><i class="ti ti-mood-smile"></i> Nothing on your plate today</div>`;
+
+  const upcomingList=upcoming.map(e=>{
+    const d=new Date(e.date+'T00:00:00');
+    return agendaRow(e,`${MONTHS[d.getMonth()].slice(0,3)} ${d.getDate()}`);
+  }).join('');
+
+  return`
+  <div class="agenda-card">
+    <div class="agenda-head">
+      <div class="agenda-head-title"><i class="ti ti-sun-2"></i> Today<span class="agenda-count">${todays.length}</span></div>
+      <button class="agenda-link" onclick="openFocus(${ty},${tm},${td})">View day <i class="ti ti-arrow-right" style="font-size:12px"></i></button>
+    </div>
+    <div class="agenda-list">${todayList}</div>
+    ${upcoming.length?`
+    <div class="agenda-divider"></div>
+    <div class="agenda-head-title agenda-head-title-sub" style="margin-bottom:.4rem"><i class="ti ti-calendar-due"></i> Coming up</div>
+    <div class="agenda-list">${upcomingList}</div>`:''}
+  </div>`;
+}
+
+function renderCal(){
+  const total=dim(curY,curM),first=fd(curY,curM);
+  const prevD=dim(curY,curM===0?curY-1:curY,curM===0?11:curM-1);
+  let cells='';
+  for(let i=0;i<first;i++){
+    const d=prevD-first+i+1,pm=curM===0?11:curM-1,py=curM===0?curY-1:curY;
+    cells+=`<div class="day other" onclick="openFocus(${py},${pm},${d})">${dayInner(py,pm,d)}</div>`;
+  }
+  for(let d=1;d<=total;d++){
+    const isTod=curY===now.getFullYear()&&curM===now.getMonth()&&d===now.getDate();
+    cells+=`<div class="day${isTod?' today':''}" onclick="openFocus(${curY},${curM},${d})">${dayInner(curY,curM,d)}</div>`;
+  }
+  const rem=(first+total)%7;
+  if(rem>0)for(let i=1;i<=7-rem;i++){
+    const nm=curM===11?0:curM+1,ny=curM===11?curY+1:curY;
+    cells+=`<div class="day other" onclick="openFocus(${ny},${nm},${i})">${dayInner(ny,nm,i)}</div>`;
+  }
+  return`
+  ${agendaHTML()}
+  <div class="month-header">
+    <div>
+      <div class="month-title">${MONTHS[curM]} ${curY}</div>
+      <div class="month-sub">Shared with your team · updates every 15s</div>
+    </div>
+    <div class="hdr-right">
+      <button class="pill-btn" onclick="goToday()">Today</button>
+      <button class="icon-btn" onclick="nav(-1)" aria-label="Previous month"><i class="ti ti-chevron-left"></i></button>
+      <button class="icon-btn" onclick="nav(1)" aria-label="Next month"><i class="ti ti-chevron-right"></i></button>
+    </div>
+  </div>
+  <div class="grid-wrap">
+    <div class="wdays">${DAYS.map(d=>`<div class="wd">${d}</div>`).join('')}</div>
+    <div class="days">${cells}</div>
+  </div>`;
+}
+
+function dayInner(y,m,d){
+  const evs=evOn(y,m,d);
+  let out=`<div class="dn">${d}</div>`;
+  evs.slice(0,2).forEach(e=>{
+    const chain=chainInfo(e);
+    if(chain.size>1){
+      const posClass=chain.isFirst?'ep-start':chain.isLast?'ep-end':'ep-mid';
+      const label=chain.isFirst?`<span class="ep-badge">${chain.size}d</span>${e.title}`:`<span class="ep-arrow">→</span>${e.title}`;
+      const tip=`${e.title} · ${chain.size}-day event (${chain.dates[0]} to ${chain.dates[chain.dates.length-1]})`;
+      out+=`<div class="ep ${e.color}${e.done?' done':''} ${posClass}" title="${tip}">${label}</div>`;
+    }else{
+      out+=`<div class="ep ${e.color}${e.done?' done':''}">${e.time} ${e.title}</div>`;
+    }
+  });
+  if(evs.length>2)out+=`<div class="more">+${evs.length-2} more</div>`;
+  return out;
+}
+
+function renderFocus(){
+  const evs=evOn(focusY,focusM,focusD);
+  const date=new Date(focusY,focusM,focusD);
+  const isToday=focusY===now.getFullYear()&&focusM===now.getMonth()&&focusD===now.getDate();
+  const prevD=new Date(focusY,focusM,focusD-1);
+  const nextD=new Date(focusY,focusM,focusD+1);
+  const firstHour=evs.length?parseInt(evs[0].time):8;
+  const startH=Math.max(0,Math.min(firstHour,isToday?Math.floor(nowHour())-1:firstHour)-1);
+  const endH=Math.min(23,Math.max(startH+8,evs.length?parseInt(evs[evs.length-1].time)+2:18));
+
+  let timeline='';
+  for(let h=startH;h<=endH;h++){
+    const label=h===0?'12am':h<12?`${h}am`:h===12?'12pm':`${h-12}pm`;
+    const hourEvs=evs.filter(e=>parseInt(e.time)===h);
+    const isNowHour=isToday&&Math.floor(nowHour())===h;
+    const nowPct=isToday?Math.round((nowHour()-Math.floor(nowHour()))*54):null;
+    let evBlocks=hourEvs.map(e=>{
+      const hasDupes=dupesOf(e).length>0;
+      const chain=chainInfo(e);
+      const multiBadge=chain.size>1?`<span class="multiday-badge" style="margin-top:2px;display:inline-block">Day ${chain.index+1}/${chain.size}</span>`:'';
+      return`
+      <div class="ev-block ${e.color}${e.done?' done':''}" role="button" tabindex="0" aria-pressed="${e.done?'true':'false'}" title="${e.done?'Mark as not done':'Mark as done'}" onclick="toggleDone('${e.id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleDone('${e.id}')}">
+        <div class="ev-title">${e.title}</div>
+        <div class="ev-time-label">${e.time}</div>
+        ${multiBadge}
+        ${hasDupes?`<button class="ev-merge-inline" onclick="event.stopPropagation();showMerge('${e.id}')" title="Merge with same-topic event on another date" aria-label="Merge with same-topic event"><i class="ti ti-git-merge"></i></button>`:''}
+        <button class="ev-del-inline" onclick="event.stopPropagation();delEv('${e.id}')" aria-label="Remove ${e.title}"><i class="ti ti-x"></i></button>
+      </div>`;
+    }).join('');
+    if(!evBlocks)evBlocks=`<div class="empty-hour"></div>`;
+    timeline+=`<div class="hour-row">
+      <span class="hr-label">${label}</span>
+      ${isNowHour?`<div class="hr-now" style="top:${nowPct}px"></div>`:'<div class="hr-line"></div>'}
+      <div style="flex:1;min-width:0;padding:4px 0 4px 12px">${evBlocks}</div>
+    </div>`;
+  }
+
+  const swatches=COLORS.map(c=>`<button type="button" class="swatch ${c}${newColor===c?' active':''}" onclick="newColor='${c}';render()" aria-label="${c.charAt(0).toUpperCase()+c.slice(1)} category" title="${c.charAt(0).toUpperCase()+c.slice(1)}"></button>`).join('');
+  const selDate=`${focusY}-${String(focusM+1).padStart(2,'0')}-${String(focusD).padStart(2,'0')}`;
+
+  return`
+  <button class="back-btn" onclick="mode='cal';render()">
+    <i class="ti ti-arrow-left" style="font-size:14px"></i> Back to ${MONTHS[curM]}
+  </button>
+  <div class="nav-strip">
+    <button class="nav-strip-btn" onclick="shiftDay(-1)">
+      <i class="ti ti-chevron-left" style="font-size:14px"></i>${DAYS[prevD.getDay()]} ${prevD.getDate()}
+    </button>
+    ${isToday?'<span class="nav-day-label">Today</span>':'<span></span>'}
+    <button class="nav-strip-btn" onclick="shiftDay(1)">
+      ${DAYS[nextD.getDay()]} ${nextD.getDate()} <i class="ti ti-chevron-right" style="font-size:14px"></i>
+    </button>
+  </div>
+  <div class="focus-header">
+    <div class="focus-date">
+      <div class="focus-weekday">${DAYS[date.getDay()]}</div>
+      <div class="focus-day-num">${focusD}</div>
+      <div class="focus-month">${MONTHS[focusM]} ${focusY}</div>
+    </div>
+    <div class="focus-stats">
+      <div class="stat"><div class="stat-n">${evs.length}</div><div class="stat-l">Event${evs.length!==1?'s':''}</div></div>
+      ${isToday?`<div class="stat"><div class="stat-n">${evs.filter(e=>e.time>now.toTimeString().slice(0,5)).length}</div><div class="stat-l">Upcoming</div></div>`:''}
+    </div>
+  </div>
+  ${evs.length===0?'<div class="empty-day"><i class="ti ti-calendar-plus"></i> No events yet — add the first one below.</div>':''}
+  <div class="timeline">${timeline}</div>
+  <div class="add-card">
+    <div class="add-card-label"><i class="ti ti-plus"></i> Add an event</div>
+    <div class="add-row">
+      <input type="text" placeholder="What's happening?" id="ftitle" value="${newTitle}" oninput="newTitle=this.value" onkeydown="if(event.key==='Enter')addEv('${selDate}')" aria-label="Event name" maxlength="60"/>
+      <input type="time" id="ftime" value="${newTime}" onchange="newTime=this.value" aria-label="Event time"/>
+      <div class="swatches" role="group" aria-label="Event color">${swatches}</div>
+      <button class="submit" onclick="addEv('${selDate}')" ${saving?'disabled':''}>
+        ${saving?'<i class="ti ti-loader" style="animation:pulse 1s infinite"></i> Saving…':'<i class="ti ti-plus"></i> Add'}
+      </button>
+    </div>
+  </div>`;
+}
+
+function openFocus(y,m,d){focusY=y;focusM=m;focusD=d;curY=y;curM=m;mode='focus';render()}
+function shiftDay(dir){
+  const d=new Date(focusY,focusM,focusD+dir);
+  focusY=d.getFullYear();focusM=d.getMonth();focusD=d.getDate();
+  curY=focusY;curM=focusM;render();
+}
+function nav(dir){
+  curM+=dir;
+  if(curM>11){curM=0;curY++}
+  if(curM<0){curM=11;curY--}
+  render();
+}
+function goToday(){curY=now.getFullYear();curM=now.getMonth();render()}
+
+fetchEvents();
+startPolling();
+</script>
+</body>
+</html>
